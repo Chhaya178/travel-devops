@@ -1,0 +1,39 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: frontend-deployment
+  namespace: wanderlust
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      name: frontend
+      labels:
+        app: frontend
+    spec:
+      containers: 
+        - name: frontend
+          image: shadowigw/travel-frontend:v2
+          ports:
+            - containerPort: 5173
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: frontend-service
+  namespace: wanderlust
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 5173
+      targetPort: 5173
+      protocol: TCP
+  type: NodePort
+  
