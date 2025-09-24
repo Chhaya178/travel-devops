@@ -1,0 +1,37 @@
+@Library('Shared') _
+pipeline {
+  agent any 
+
+  parameters {
+     string(name: 'FRONTEND_DOCKER_TAG', defaultValue: '', description: 'Frontend Docker tag of the image built by the CI job')
+     string(name: 'BACKEND_DOCKER_TAG', defaultValue: '', description: 'Backend Docker tag of the image built by the CI job')
+   }
+
+  stages {
+    stage("Workspace Cleanup") {
+      steps {
+        script {
+          cleanWs() 
+       } 
+     }
+    }
+
+   stage("Git: Code Checkout") {
+      steps {
+        script {
+           code_checkout("https://github.com/Chhaya178/travel-devops.git", "main")
+         }
+      }
+    }
+  
+  stage("Verify: Docker Image Tags") {
+     steps {
+        script {
+          echo "FRONTEND_DOCKER_TAG: ${params.FRONTEND_DOCKER_TAG}"
+          echo "BACKEND_DOCKER_TAG: ${params.BACKEND_DOCKER_TAG}"
+          }
+       }
+     }
+  }
+
+}
