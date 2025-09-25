@@ -32,6 +32,95 @@ pipeline {
           }
        }
      }
+
+  stage("Update: Kubernetes manifests") {
+     steps {
+        script {
+           dir('kubernetes') {
+                sh """
+                   sed -i -e s/travel-backend.*/travel-backend:${params.BACKEND_DOCKER_TAG}/g backend.yml
+                 """
+            }
+            
+           dir('kubernetes') {
+               sh """
+                   sed -i -e s/travel-frontend.*/travel-frontend:${params.FRONTEND_DOCKER_TAG}/g frontend.yml
+                 """
+            }
+         }
+       }
+    }
+
+    stage("Git: Code update and push to Github")  {
+       steps {
+         script {
+            withCredentials([gitUsernamePassword(credentialsId: 'Github-cred', gitToolName: 'Default')]) {
+               sh '''
+               echo "Checking repository status:"
+               git status
+
+               echo "Adding changes to Git:"
+               git add .
+
+               echo "Commiting changes to Git:"
+               git commit -m "Updated Environment Variables"
+
+               echo "Pushing changes to Github"
+               git push https://github.com/Chhaya178/travel-devops.git main
+            '''
+            }
+         }
+       }
+     }
   }
+
+    post {
+       success {
+          script { 
+            emailext attachLog: true,
+            from: 'chhayapatelramdhaniya@gmail.com'
+            subject: "Travel-devops Application has been updated and deployed - '${currentBuild.result}"
+            body: """
+                    <html>
+                    <body>
+                        <div style="background-color: #FFA07A; padding: 10px; margin-bottom: 10px;">
+                            <p style="color: black; font-weight: bold;">Project: ${env.JOB_NAME}</p>
+                        </div>
+                        <div style="background-color: #90EE90; padding: 10px; margin-bottom: 10px;">
+                            <p style="color: black; font-weight: bold;">Build Number: ${env.BUILD_NUMBER}</p>
+                        </div>
+                        <div style="background-color: #87CEEB; padding: 10px; margin-bottom: 10px;">
+                            <p style="color: black; font-weight: bold;">URL: ${env.BUILD_URL}</p>
+                        </div>
+                    </body>
+                    </html>
+            """,
+            to: 'chhayapatelramdhaniya@gmail.com'  
+            mimeType: 'text/html'          
+         }
+      }
+
+       failure {
+          script {
+            emailext attachLog: true
+            from: 'chhayapatelramdhaniya@gmail.com'
+            subject: "Travel-devops Application build failed - '${currentBuild.result}'"
+            body: """
+                    <html>
+                    <body>
+                        <div style="background-color: #FFA07A; padding: 10px; margin-bottom: 10px;">
+                            <p style="color: black; font-weight: bold;">Project: ${env.JOB_NAME}</p>
+                        </div>
+                        <div style="background-color: #90EE90; padding: 10px; margin-bottom: 10px;">
+                            <p style="color: black; font-weight: bold;">Build Number: ${env.BUILD_NUMBER}</p>
+                        </div>
+                    </body>
+                    </html>
+            """,
+            to: 'trainwithshubham@gmail.com',
+            mimeType: 'text/html'
+         }
+       }
+    }
 
 }
